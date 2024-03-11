@@ -1,16 +1,6 @@
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
-
-
-def calculate_eman(data, n):
-    alpha = 2 / (n+1)
-    ema_values = []
-    for i in range(len(data)):
-        if i == 0:
-            ema_values.append(data[i])
-        else:
-            ema_values.append(alpha*data[i] + (1-alpha) * ema_values[i-1])
-    return ema_values
 
 
 # load data
@@ -20,14 +10,47 @@ df = pd.read_csv('data/nvda_us_w.csv')
 dates = pd.to_datetime(df['Data'])
 closing = df['Zamkniecie']
 
-# calculate ema for n=12
-macd12 = calculate_eman(closing, 12)
 
-# Plot the data
-plt.figure(figsize=(10, 6))
-plt.plot(dates, macd12, label='EMAN (n=12)', color='blue')
-plt.title('Exponential Moving Average (EMAn) for n=12')
+class Macd:
+    __macd = []
+
+    def __init__(self, data):
+        self.calculate_macd(data)
+
+    def calculate_ema(self, n, data, day):
+        alpha = 2 / (n + 1)
+        data_arr = data.array
+        p = data_arr[day - n: day + 1:]
+        p = np.flip(p)
+        counter = 0.0
+        denominator = 0.0
+        for i in range(n + 1):
+            counter += (1 - alpha) ** i * p[i]
+            denominator += (1 - alpha) ** i
+        return counter / denominator
+
+    def calculate_macd(self, data):
+        self.__macd = []
+        for i in range(len(data)):
+            if i >= 26:
+                ema12 = self.calculate_ema(12, data, i)
+                ema26 = self.calculate_ema(26, data, i)
+                temp_macd = ema12 - ema26
+                self.__macd.append(temp_macd)
+            else:
+                self.__macd.append(float(0))
+
+    def get_macd(self):
+        return self.__macd
+
+
+nvidia_macd = Macd(closing)
+
+plt.figure(figsize=(12, 6))
+plt.plot(dates[26:], closing[26:], label='NVIDIA STOCK', color="red")
+plt.plot(dates[26:], nvidia_macd.get_macd()[26:], label='NVIDIA MACD', color='blue')
+plt.title('NVIDIA Stock Closing Values and MACD')
 plt.xlabel('Date')
-plt.ylabel('EMAN Values')
+plt.ylabel('Value')
 plt.legend()
 plt.show()
