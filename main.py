@@ -2,11 +2,10 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-
-# load data
+# wczytaj dane
 df = pd.read_csv('data/btc_v_d.csv')[-1000:]
 
-# creating variables for dartes and closing values
+# tworzenie zmiennych ktore przechwouja daty i wartosci zamkniecia danego dnia
 dates = pd.to_datetime(df['Data'])
 closing = df['Zamkniecie']
 
@@ -66,24 +65,56 @@ class Macd:
         return self.__signal
 
 
-nvidia_macd = Macd(closing)
+class Plot:
+    def __init__(self, macd=None):
+        if macd is None:
+            self.stock_plot()
+        else:
+            self.macd_plot(macd)
 
-# Pierwszy wykres z MACD i SIGNAL
-plt.figure(figsize=(12, 6))
-plt.plot(dates[26:], nvidia_macd.get_macd()[26:], label='MACD', color='blue')
-plt.plot(dates[26:], nvidia_macd.get_signal()[26:], label='SIGNAL', color="red")
-plt.title('Stock MACD and Signal')
-plt.xlabel('Date')
-plt.ylabel('Value')
-plt.legend()
-plt.show()
+    def stock_plot(self):
+        plt.figure(figsize=(12, 6))
+        plt.plot(dates[26:], closing[26:], label='STOCK', color="red")
+        plt.title('Stock Closing Values')
+        plt.xlabel('Date')
+        plt.ylabel('Value')
+        plt.legend()
+        plt.show()
 
-# Drugi wykres z zamknięciami akcji NVIDIA
-plt.figure(figsize=(12, 6))
-plt.plot(dates[26:], closing[26:], label='NVIDIA STOCK', color="red")
-plt.title('Stock Closing Values')
-plt.xlabel('Date')
-plt.ylabel('Value')
-plt.legend()
-plt.show()
+    def macd_plot(self, macd):
+        # Pierwszy wykres z MACD i SIGNAL z zaznaczonymi punktami przecięcia
+        plt.figure(figsize=(20, 10))
+        plt.plot(dates[26:], macd.get_macd()[26:], label='MACD', color='blue')
+        plt.plot(dates[26:], macd.get_signal()[26:], label='SIGNAL', color="red")
+        plt.title('Stock MACD and Signal with Intersection Points')
+        plt.xlabel('Date')
+        plt.ylabel('Value')
+
+        plt.legend()
+
+        # Znajdź punkty przecięcia
+        intersection_points = []
+        macd_values = macd.get_macd()[26:]
+        signal_values = macd.get_signal()[26:]
+        dates_list = dates[26:].tolist()  # Zamień DatetimeIndex na listę
+        for i in range(1, len(macd_values)):
+            if (macd_values[i - 1] < signal_values[i - 1] and macd_values[i] > signal_values[i]) or \
+                    (macd_values[i - 1] > signal_values[i - 1] and macd_values[i] < signal_values[i]):
+                intersection_points.append(dates_list[i])  # Indeksujemy listę zamiast DatetimeIndex
+
+        # Zaznacz punkty przecięcia na wykresie
+        for point in intersection_points:
+            plt.scatter(point, macd_values[dates_list.index(point)], color='green', zorder=5 )
+
+        plt.legend(['MACD', 'SIGNAL', 'BUY/SELL'])
+        plt.show()
+
+
+ourMacd = Macd(closing)
+stockPlot = Plot()
+macdPlot = Plot(ourMacd)
+
+
+
+
 
