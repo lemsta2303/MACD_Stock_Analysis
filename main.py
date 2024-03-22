@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # wczytaj dane
-df = pd.read_csv('data/btc_v_d.csv')[-100:]
+df = pd.read_csv('data/wig20_d.csv')[-500:]
 
 # tworzenie zmiennych ktore przechwouja daty i wartosci zamkniecia danego dnia
 dates = pd.to_datetime(df['Data'])
@@ -124,9 +124,10 @@ class Plots:
 
 class Simulation:
     def __init__(self, plots):
-        self.__stocks = 1000
-        self.__money = 0
+        self.__stocks = 0
+        self.__money = 100
         self.__points = plots.get_intersection_points()
+        self.__account_balance = []
         self.__buy_or_sell = plots.get_intersection_points_buy_or_sell()
         self.simulate_trading()
 
@@ -134,22 +135,33 @@ class Simulation:
         dates_list = dates[26:].tolist()
         for index, point in enumerate(self.__points):
             if self.__buy_or_sell[index] == "buy" and self.__money > 0:
-                stocks_to_buy = self.__money / closing.array[dates_list.index(point)+26]
-                self.__stocks += stocks_to_buy
+                self.__stocks = self.__money / closing.array[dates_list.index(point)+26]
                 self.__money = 0
             elif self.__buy_or_sell[index] == "sell" and self.__stocks > 0:
-                self.__money += self.__stocks * closing.array[dates_list.index(point)+26]
+                self.__money = self.__stocks * closing.array[dates_list.index(point)+26]
                 self.__stocks = 0
+            # Obliczenie stanu konta dla bieżącego punktu
+            current_balance = self.__money + self.__stocks * closing.array[dates_list.index(point)+26]
+            self.__account_balance.append(current_balance)
+
 
     def get_final_balance(self):
         return self.__stocks, self.__money
 
+    def plot_account_balance(self):
+        plt.figure(figsize=(12, 6))
+        plt.plot(self.__points, self.__account_balance, marker='o', linestyle='-')
+        plt.title('Account Balance Over Time')
+        plt.xlabel('Date')
+        plt.ylabel('Account Balance')
+        plt.show()
 
 
 ourMacd = Macd(closing)
 myPlots = Plots(ourMacd)
 simulation = Simulation(myPlots)
 print(simulation.get_final_balance())
+simulation.plot_account_balance()
 
 
 
