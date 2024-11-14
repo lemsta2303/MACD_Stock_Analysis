@@ -2,13 +2,12 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-# wczytaj dane
+# load data
 df = pd.read_csv('data/wig20_d.csv')[-500:]
 
-# tworzenie zmiennych ktore przechwouja daty i wartosci zamkniecia danego dnia
+# create variables for data
 dates = pd.to_datetime(df['Data'])
 closing = df['Zamkniecie']
-
 
 class Macd:
     __macd = []
@@ -21,7 +20,7 @@ class Macd:
     def calculate_ema(self, n, data, day):
         alpha = 2 / (n + 1)
 
-        # sprawdzenie czy data jest tablica, jesli nie to konwersja na tablcie
+        # check if data is an array
         if isinstance(data, np.ndarray):
             data_arr = data
         else:
@@ -86,7 +85,7 @@ class Plots:
         plt.show()
 
     def macd_plot(self, macd):
-        # Pierwszy wykres z MACD i SIGNAL z zaznaczonymi punktami przecięcia
+
         plt.figure(figsize=(20, 10))
         plt.plot(dates[26:], macd.get_macd()[26:], label='MACD', color='blue')
         plt.plot(dates[26:], macd.get_signal()[26:], label='SIGNAL', color="red")
@@ -96,10 +95,9 @@ class Plots:
 
         plt.legend()
 
-        # Znajdź punkty przecięcia
         macd_values = macd.get_macd()[26:]
         signal_values = macd.get_signal()[26:]
-        dates_list = dates[26:].tolist()  # Zamień DatetimeIndex na listę
+        dates_list = dates[26:].tolist()  
         for i in range(1, len(macd_values)):
             if macd_values[i - 1] < signal_values[i - 1] and macd_values[i] > signal_values[i]:
                 self.__intersection_points.append(dates_list[i])
@@ -108,7 +106,6 @@ class Plots:
                 self.__intersection_points.append(dates_list[i])
                 self.__intersection_points_buy_or_sell.append("sell")
 
-        # Zaznacz punkty przecięcia na wykresie
         for point in self.__intersection_points:
             plt.scatter(point, macd_values[dates_list.index(point)], color='green', zorder=5 )
 
@@ -140,7 +137,6 @@ class Simulation:
             elif self.__buy_or_sell[index] == "sell" and self.__stocks > 0:
                 self.__money = self.__stocks * closing.array[dates_list.index(point)+26]
                 self.__stocks = 0
-            # Obliczenie stanu konta dla bieżącego punktu
             current_balance = self.__money + self.__stocks * closing.array[dates_list.index(point)+26]
             self.__account_balance.append(current_balance)
 
